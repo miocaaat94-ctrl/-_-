@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건강 관리 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f9f8f6; --card: #ffffff; --border: #e8e4de;
+    --text: #1a1814; --muted: #7a756d; --accent: #2d6a4f;
+    --hdl: #1a5f8a; --ldl: #c75c2e; --total: #8a4a1a; --tri: #2d6a4f;
+    --nodule1: #6b3fa0; --nodule2: #c0395b;
+    --good-bg: #e8f5ef; --good-fg: #1a5c39;
+    --warn-bg: #fdf0ea; --warn-fg: #a84020;
+    --ok-bg:   #fdf6e8; --ok-fg:   #7a5010;
+  }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 24px 20px 48px; font-size: 13px; line-height: 1.6;
+  }
+  .header {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-meta { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .sync-badge {
+    margin-left: auto; font-size: 11px; color: var(--muted);
+    font-family: 'DM Mono', monospace; background: #f0ede8;
+    padding: 3px 10px; border-radius: 20px;
+  }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 24px; }
+  @media(max-width:600px){ .cards { grid-template-columns: repeat(2,1fr); } }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 14px 12px;
+  }
+  .card-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family:'DM Mono',monospace; }
+  .card-value { font-size: 26px; font-weight: 700; font-family:'DM Mono',monospace; letter-spacing: -0.5px; line-height:1; margin-bottom:6px; }
+  .badge { display:inline-block; padding:1px 7px; border-radius:4px; font-size:10px; font-weight:500; font-family:'DM Mono',monospace; }
+  .badge-good { background: var(--good-bg); color: var(--good-fg); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn-fg); }
+  .badge-ok   { background: var(--ok-bg);   color: var(--ok-fg); }
+
+  /* Section */
+  .section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* Filters */
+  .filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .filter-btn {
+    font-family:'Noto Sans KR',sans-serif; font-size:11.5px;
+    padding:4px 12px; border-radius:20px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer; transition:all .15s;
+  }
+  .filter-btn:hover { border-color:#bbb; color:var(--text); }
+  .filter-btn.active { background:var(--text); color:#fff; border-color:var(--text); }
+
+  /* Legend */
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--muted); }
+  .legend-swatch { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+  .legend-dash { width:16px; border-top:2px dashed; flex-shrink:0; }
+
+  /* Chart */
+  .chart-wrap { position:relative; width:100%; }
+
+  /* Nodule */
+  .nodule-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:500px){ .nodule-grid { grid-template-columns:1fr; } }
+  .nodule-card { background:#fafaf8; border:1px solid var(--border); border-radius:8px; padding:14px; }
+  .nodule-title { font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:.5px; }
+  .nodule-sizes { display:flex; align-items:flex-end; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .nodule-entry { text-align:center; }
+  .nodule-year { font-size:10px; color:var(--muted); margin-bottom:4px; font-family:'DM Mono',monospace; }
+  .nodule-bar-wrap { display:flex; align-items:flex-end; justify-content:center; height:60px; }
+  .nodule-bar { width:30px; border-radius:4px 4px 0 0; min-height:4px; }
+  .nodule-cm { font-size:12px; font-weight:700; font-family:'DM Mono',monospace; margin-top:4px; }
+  .arrow { font-size:18px; color:var(--border); align-self:center; padding-bottom:14px; }
+  .nodule-note { font-size:10.5px; color:var(--muted); line-height:1.5; }
+
+  /* Checklist */
+  .checklist-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media(max-width:500px){ .checklist-grid { grid-template-columns:1fr; } }
+  .checklist-group-title { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .checklist-item { display:flex; align-items:flex-start; gap:8px; margin-bottom:7px; cursor:pointer; user-select:none; }
+  .check-box {
+    width:15px; height:15px; border-radius:3px; border:1.5px solid var(--border);
+    flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    transition:all .15s; background:#fff;
+  }
+  .check-box.checked { background:var(--accent); border-color:var(--accent); }
+  .check-box.checked::after {
+    content:''; width:8px; height:5px;
+    border-left:1.5px solid #fff; border-bottom:1.5px solid #fff;
+    transform:rotate(-45deg) translateY(-1px); display:block;
+  }
+  .check-label { font-size:12px; color:var(--text); line-height:1.5; }
+  .check-label.done { text-decoration:line-through; color:var(--muted); }
+
+  /* Schedule */
+  .schedule-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .schedule-table th {
+    text-align:left; font-size:10.5px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.4px;
+    padding:0 0 8px; border-bottom:1px solid var(--border);
+  }
+  .schedule-table td { padding:9px 0; border-bottom:1px solid #f0ede8; vertical-align:middle; }
+  .schedule-table tr:last-child td { border-bottom:none; }
+  .period-badge {
+    display:inline-block; padding:2px 8px; border-radius:4px;
+    background:#f0ede8; color:var(--muted); font-size:10.5px; font-family:'DM Mono',monospace;
+  }
+
+  /* Loading/Error */
+  .loading { text-align:center; padding:60px 20px; color:var(--muted); font-size:13px; }
+  .error-msg { background:var(--warn-bg); color:var(--warn-fg); padding:12px 16px; border-radius:8px; font-size:12px; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🩺 건강 관리 대시보드</h1>
+  <span class="sync-badge" id="syncBadge">불러오는 중...</span>
+</div>
+
+<div id="app"><div class="loading">노션 데이터를 불러오는 중...</div></div>
+
+<script>
+// ── 체크리스트 항목 (고정) ─────────────────────────────────────
+const CHECKLIST = {
+  "식이 관리": [
+    "샐러드 주 1회", "채소 / 과일 늘리기", "싱겁게 먹기 (저염)",
+    "짜고 기름진 음식 피하기", "아침 커피 먹은 날 → 저녁 음료 스킵"
+  ],
+  "영양제": ["스피루리나 매일", "오메가3 매일", "혈관팔팔 매일", "온혈수 매일"],
+  "운동": ["계단 이틀에 1번 (15분)"],
+};
+
+const COLORS = {
+  hdl: '#1a5f8a', ldl: '#c75c2e', total: '#8a4a1a', tri: '#2d6a4f',
+  nodule1: '#6b3fa0', nodule2: '#c0395b',
+};
+
+const GOALS = { hdl: 60, ldl: 100, total: 200, tri: 150 };
+
+// ── 유틸 ──────────────────────────────────────────────────────
+function badge(value, key) {
+  if (value == null) return '';
+  const g = GOALS[key];
+  if (!g) return '';
+  let cls, label;
+  if (key === 'hdl') {
+    cls = value >= g ? 'badge-good' : 'badge-warn';
+    label = value >= g ? '목표 달성' : '목표 미달';
+  } else {
+    if (value <= g * 0.95)      { cls = 'badge-good'; label = '목표 달성'; }
+    else if (value <= g)        { cls = 'badge-ok';   label = '경계'; }
+    else                        { cls = 'badge-warn'; label = '목표 초과'; }
+  }
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function toggle(item) {
+  const box = item.querySelector('.check-box');
+  const lbl = item.querySelector('.check-label');
+  box.classList.toggle('checked');
+  lbl.classList.toggle('done');
+}
+
+// ── 렌더 ──────────────────────────────────────────────────────
+function render(data) {
+  const chol = data.cholesterol || [];
+  const latest = chol[chol.length - 1] || {};
+  const liver  = data.nodules?.liver  || [];
+  const breast = data.nodules?.breast || [];
+  const sched  = data.schedule || [];
+
+  const labels = chol.map(d => d.period);
+
+  // Summary cards
+  const cardDefs = [
+    { key:'hdl',   label:'HDL (좋은 콜레스테롤)', goal:'목표 60↑', color: COLORS.hdl   },
+    { key:'ldl',   label:'LDL (나쁜 콜레스테롤)', goal:'목표 100↓', color: COLORS.ldl  },
+    { key:'total', label:'총 콜레스테롤',          goal:'목표 200↓', color: COLORS.total },
+    { key:'tri',   label:'중성지방',               goal:'목표 150↓', color: COLORS.tri  },
+  ];
+
+  const cardsHTML = cardDefs.map(c => `
+    <div class="card">
+      <div class="card-label">${c.label}</div>
+      <div class="card-value" style="color:${c.color}">${latest[c.key] ?? '-'}</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;">
+        ${badge(latest[c.key], c.key)}
+        <span style="color:var(--muted)">${c.goal}</span>
+      </div>
+    </div>`).join('');
+
+  // Nodule bars helper
+  function noduleBars(entries, color) {
+    if (!entries.length) return '<p style="color:var(--muted);font-size:12px;">데이터 없음</p>';
+    const maxH = 56, maxV = Math.max(...entries.map(e => e.size_cm || 0), 0.01);
+    return entries.map((e, i) => {
+      const h = Math.max(4, Math.round((e.size_cm / maxV) * maxH));
+      const isLast = i === entries.length - 1;
+      return `
+        ${i > 0 ? '<div class="arrow">→</div>' : ''}
+        <div class="nodule-entry">
+          <div class="nodule-year">${e.period}</div>
+          <div class="nodule-bar-wrap">
+            <div class="nodule-bar" style="background:${color};height:${h}px;opacity:${isLast?1:0.5}"></div>
+          </div>
+          <div class="nodule-cm" style="color:${color}">${e.size_cm ?? '-'}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Schedule rows
+  const schedHTML = sched.map(s => `
+    <tr>
+      <td>${s.item}</td>
+      <td><span class="period-badge">${s.period}</span></td>
+      <td><input type="date" /></td>
+    </tr>`).join('') || `
+    <tr><td colspan="3" style="color:var(--muted);padding:12px 0">일정 데이터 없음</td></tr>`;
+
+  // Checklist
+  const clHTML = Object.entries(CHECKLIST).map(([group, items]) => `
+    <div class="checklist-group">
+      <div class="checklist-group-title">${group}</div>
+      ${items.map(item => `
+        <div class="checklist-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-label">${item}</div>
+        </div>`).join('')}
+    </div>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="cards">${cardsHTML}</div>
+
+    <!-- 콜레스테롤 차트 -->
+    <div class="section">
+      <div class="section-title">
+        <span class="dot" style="background:${COLORS.hdl}"></span>콜레스테롤 수치 추이
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">전체</button>
+        <button class="filter-btn" onclick="setFilter('hdl',this)">HDL</button>
+        <button class="filter-btn" onclick="setFilter('ldl',this)">LDL</button>
+        <button class="filter-btn" onclick="setFilter('total',this)">총 콜레스테롤</button>
+        <button class="filter-btn" onclick="setFilter('tri',this)">중성지방</button>
+      </div>
+      <div class="legend">
+        ${Object.entries(COLORS).filter(([k])=>['hdl','ldl','total','tri'].includes(k)).map(([k,c])=>`
+          <div class="legend-item"><div class="legend-swatch" style="background:${c}"></div>${{hdl:'HDL',ldl:'LDL',total:'총 콜레스테롤',tri:'중성지방'}[k]}</div>
+        `).join('')}
+        <div class="legend-item"><div class="legend-dash" style="border-color:#aaa"></div>목표 기준선</div>
+      </div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chol" role="img" aria-label="콜레스테롤 수치 추이"></canvas>
+      </div>
+    </div>
+
+    <!-- 혹 추이 -->
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:${COLORS.nodule1}"></span>혹 크기 추이</div>
+      <div class="nodule-grid">
+        <div class="nodule-card">
+          <div class="nodule-title">간 혹</div>
+          <div class="nodule-sizes">${noduleBars(liver, COLORS.nodule1)}</div>
+          <div class="nodule-note">CT로 양성/악성 판별 가능. 지속 추적 필요.</div>
+        </div>
+        <div class="nodule-card">
+          <div class="nodule-title">유방 혹 (치밀 유방)</div>
+          <div class="nodule-sizes">${noduleBars(breast, COLORS.nodule2)}</div>
+          <div class="nodule-note">6개월→1년→2년 주기 초음파. 크기 지속 증가 시 절제 고려.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 체크리스트 -->
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:#2d6a4f"></span>일상 관리 체크리스트</div>
+      <div class="checklist-grid">${clHTML}</div>
+    </div>
+
+    <!-- 검진 일정 -->
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:#c75c2e"></span>다음 검진 일정</div>
+      <table class="schedule-table">
+        <thead>
+          <tr><th style="width:42%">항목</th><th style="width:28%">권장 주기</th><th>예정일</th></tr>
+        </thead>
+        <tbody>${schedHTML}</tbody>
+      </table>
+    </div>
+  `;
+
+  // Chart.js 초기화
+  const mainDs = [
+    { id:'hdl',   label:'HDL',       data: chol.map(d=>d.hdl),   color: COLORS.hdl   },
+    { id:'ldl',   label:'LDL',       data: chol.map(d=>d.ldl),   color: COLORS.ldl   },
+    { id:'total', label:'총 콜레스테롤', data: chol.map(d=>d.total), color: COLORS.total },
+    { id:'tri',   label:'중성지방',   data: chol.map(d=>d.tri),   color: COLORS.tri   },
+  ];
+  const goalDs = mainDs.map(d => ({
+    id: 'goal-'+d.id, label: d.label+' 목표',
+    data: Array(labels.length).fill(GOALS[d.id]),
+    borderColor: d.color, borderDash: [5,5], borderWidth:1.2,
+    pointRadius:0, fill:false, hidden:false,
+  }));
+  const chartDs = mainDs.map(d => ({
+    id: d.id, label: d.label, data: d.data,
+    borderColor: d.color, backgroundColor: d.color+'18',
+    pointBackgroundColor: d.color, pointBorderColor:'#fff', pointBorderWidth:1.5,
+    borderWidth:2, pointRadius:5, pointHoverRadius:7, tension:0.35, fill:false,
+  }));
+
+  window._chart = new Chart(document.getElementById('chol'), {
+    type: 'line',
+    data: { labels, datasets: [...chartDs, ...goalDs] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#1a1814ee', titleColor:'#fff', bodyColor:'#ccc',
+          padding:12, cornerRadius:8,
+          filter: item => item.dataset.pointRadius !== 0,
+          callbacks: { label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y}` }
+        }
+      },
+      scales: {
+        x: { grid:{color:'#e8e4de80'}, ticks:{font:{family:'DM Mono',size:11},color:'#7a756d',maxRotation:25} },
+        y: { min:30, max:230, grid:{color:'#e8e4de80'}, ticks:{font:{family:'DM Mono',size:11},color:'#7a756d',stepSize:50} }
+      }
+    }
+  });
+}
+
+window.setFilter = function(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!window._chart) return;
+  window._chart.data.datasets.forEach(ds => {
+    if (type === 'all') { ds.hidden = false; }
+    else { ds.hidden = !(ds.id === type || ds.id === 'goal-'+type); }
+  });
+  window._chart.update();
+};
+
+// ── data.json 로드 ─────────────────────────────────────────────
+fetch('data.json?t=' + Date.now())
+  .then(r => { if (!r.ok) throw new Error('data.json 로드 실패 ('+r.status+')'); return r.json(); })
+  .then(data => {
+    // 마지막 동기화 시각 표시
+    const now = new Date().toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncBadge').textContent = '마지막 동기화 ' + now;
+    render(data);
+  })
+  .catch(err => {
+    document.getElementById('syncBadge').textContent = '로드 실패';
+    document.getElementById('app').innerHTML =
+      `<div class="error-msg">⚠️ ${err.message}<br>GitHub Actions가 아직 실행되지 않았거나 data.json이 없습니다. Actions 탭에서 수동 실행해보세요.</div>`;
+  });
+</script>
+</body>
+</html>
