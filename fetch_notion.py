@@ -8,6 +8,8 @@ import os, re, json, urllib.request, urllib.error
 TOKEN   = os.environ["NOTION_TOKEN"]
 PAGE_ID = os.environ["NOTION_PAGE_ID"].replace("-", "")
 
+TOKEN = TOKEN.strip().encode('ascii', 'ignore').decode('ascii')
+
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
     "Notion-Version": "2022-06-28",
