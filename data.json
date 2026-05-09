@@ -1,8 +1,116 @@
 {
-  "cholesterol": [],
+  "cholesterol": [
+    {
+      "period": "2022년",
+      "hdl": 51.0,
+      "ldl": 125.0,
+      "total": 125.0,
+      "tri": 106.0,
+      "note": "혈관 탄력 감소"
+    },
+    {
+      "period": "2024년 초",
+      "hdl": 62.0,
+      "ldl": 127.0,
+      "total": 127.0,
+      "tri": 50.0,
+      "note": "혈관 탄력 감소"
+    },
+    {
+      "period": "2024년 8월",
+      "hdl": 64.0,
+      "ldl": 120.0,
+      "total": 205.0,
+      "tri": 102.0,
+      "note": "-"
+    },
+    {
+      "period": "2025년 2월",
+      "hdl": 62.0,
+      "ldl": 92.0,
+      "total": 187.0,
+      "tri": 161.0,
+      "note": "LDL 개선 ✅"
+    },
+    {
+      "period": "2025년 11월",
+      "hdl": 62.8,
+      "ldl": 121.0,
+      "total": 199.0,
+      "tri": 79.0,
+      "note": "중성지방 개선 ✅"
+    }
+  ],
   "nodules": {
-    "liver": [],
-    "breast": []
+    "liver": [
+      {
+        "period": "2022년",
+        "size_cm": 0.7
+      },
+      {
+        "period": "2024년",
+        "size_cm": 0.58
+      }
+    ],
+    "breast": [
+      {
+        "period": "기록 1",
+        "size_cm": 0.7,
+        "result": "양성",
+        "note": "우측, 초음파 트래킹 중"
+      },
+      {
+        "period": "기록 2",
+        "size_cm": 1.06,
+        "result": "-",
+        "note": "크기 증가 시 절제 고려"
+      },
+      {
+        "period": "상태",
+        "size_cm": null,
+        "result": "",
+        "note": ""
+      },
+      {
+        "period": "비고",
+        "size_cm": null,
+        "result": "",
+        "note": ""
+      },
+      {
+        "period": "과거 진단",
+        "size_cm": null,
+        "result": "",
+        "note": ""
+      },
+      {
+        "period": "현재 상태",
+        "size_cm": null,
+        "result": "",
+        "note": ""
+      }
+    ]
   },
-  "schedule": []
+  "schedule": [
+    {
+      "item": "콜레스테롤 / 혈관",
+      "period": "6개월~1년"
+    },
+    {
+      "item": "간 혹 초음파",
+      "period": "1년"
+    },
+    {
+      "item": "유방 혹 초음파",
+      "period": "6개월"
+    },
+    {
+      "item": "부인과 (HPV) 정기 검진",
+      "period": "1년"
+    },
+    {
+      "item": "요산 수치",
+      "period": "다음 건강검진 시"
+    }
+  ]
 }
